@@ -17,6 +17,27 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// verify jwt middleware
+const verifyToken = async (req, res, next) => {
+  // Get token
+  const token = req.cookies?.token;
+  console.log("find the valid token", token);
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    //if token is not valid... error
+    if (err) {
+      return res.status(401).send({ message: "Unauthorized access" });
+    }
+
+    // If token is valid
+    console.log("value in token", decoded);
+    req.user = decoded;
+    next();
+  });
+};
 
 // const uri = `mongodb://localhost:27017`;
 
@@ -38,6 +59,37 @@ async function run() {
 
     const productCollection = client.db("ZenMarket").collection("products");
 
+    /*******Tokens JWT Generate********/
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      // console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "365d",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          // secure: false,
+          secure: process.env.NODE_ENV === "production" ? true : false,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    // Clear token on logout
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      // console.log('User logged out');
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production" ? true : false,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          maxAge: 0,
+        })
+        .send({ message: true });
+    });
+
     /*****************Start*****************************/
     // Get all product data from db
     app.get(`/products`, async (req, res) => {
@@ -46,7 +98,7 @@ async function run() {
       res.send(result);
     });
 
-    // Get all jobs data from db for pagination
+    // Get all product data from db for pagination
 
     app.get("/all-products", async (req, res) => {
       const size = parseInt(req.query.size);
