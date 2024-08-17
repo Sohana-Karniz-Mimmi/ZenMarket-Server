@@ -65,13 +65,9 @@ async function run() {
       };
 
       if (filter) query.category = filter;
-      
+      if (brand) query.brand_name = brand;
 
-      // Handle price range filtering
-      if (price) {
-        const [minPrice, maxPrice] = price.split("-").map(Number);
-        query.price = { $gte: minPrice, $lte: maxPrice };
-      }
+      
 
       // Handle sorting by price high to low and low to high
       let options = {};
