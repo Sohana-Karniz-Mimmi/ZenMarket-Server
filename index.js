@@ -47,7 +47,27 @@ async function run() {
       res.send(result);
     });
 
-   
+    // Get all products data from db for pagination 
+    app.get("/all-products", async (req, res) => {
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
+      const search = req.query.search;
+
+      // console.log(size, page);
+
+      let query = {
+        name: { $regex: search, $options: "i" },
+      };
+
+      const result = await productCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+
+      res.send(result);
+    });
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
