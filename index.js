@@ -73,12 +73,11 @@ async function run() {
         query.price = { $gte: minPrice, $lte: maxPrice };
       }
 
-      
+      // Handle sorting by price high to low and low to high
+      let options = {};
+      if (sort) options.sort = { price: sort === "asc" ? 1 : -1 };
 
-      // Handle sorting by newest product first show
-      if (sort_newest) {
-        options.sort = { createdAt: sort_newest === "dsc" ? -1 : 1 };
-      }
+     
 
       const result = await productCollection
         .find(query, options)
