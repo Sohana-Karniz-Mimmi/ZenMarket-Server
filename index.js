@@ -51,13 +51,36 @@ async function run() {
     app.get("/all-products", async (req, res) => {
       const size = parseInt(req.query.size);
       const page = parseInt(req.query.page) - 1;
+      const filter = req.query.filter;
+      const brand = req.query.brand;
+      const sort = req.query.sort;
       const search = req.query.search;
+      const price = req.query.price;
+      const sort_newest = req.query.sort_newest;
 
       // console.log(size, page);
 
       let query = {
         name: { $regex: search, $options: "i" },
       };
+
+      if (filter) query.category = filter;
+      
+
+      // Handle price range filtering
+      if (price) {
+        const [minPrice, maxPrice] = price.split("-").map(Number);
+        query.price = { $gte: minPrice, $lte: maxPrice };
+      }
+
+      // Handle sorting by price high to low and low to high
+      let options = {};
+      if (sort) options.sort = { price: sort === "asc" ? 1 : -1 };
+
+      // Handle sorting by newest product first show
+      if (sort_newest) {
+        options.sort = { createdAt: sort_newest === "dsc" ? -1 : 1 };
+      }
 
       const result = await productCollection
         .find(query, options)
